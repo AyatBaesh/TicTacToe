@@ -4,6 +4,7 @@ const Gameboard = (() => {
     const getField = (id) => {
         return board[id];
     }
+    const getBoard = () => board;
     const updateField =  (index, marker) => {
         if(board[index] != ''){
             console.log(`field is occupied`);
@@ -27,7 +28,7 @@ const Gameboard = (() => {
             board[i] = '';
         }
     }
-    return {getField, updateField, reset}
+    return {getField, getBoard, updateField, reset}
 })();
 const Player = (name, marker) => {
     this.name = name;
@@ -36,12 +37,42 @@ const Player = (name, marker) => {
     const getMarker = () => marker;
     return {getMarker, getName};
 }
+const GameOver = (board) => {
+    const winConditions = [
+        [0,1,2],
+        [3,4,5],
+        [6,7,8],
+        [0,3,6],
+        [1,4,7],
+        [2,5,8],
+        [0,4,8],
+        [2,4,6]];
+    const checkWin = () =>{
+        for(let i = 0;  i < winConditions.length; i++){
+            const [id1,id2,id3] = winConditions[i];
+            const marker1 = board[id1]; 
+            const marker2 = board[id2];
+            const marker3 = board[id3];
+
+            if(marker1 != '' && marker1 === marker2 && marker2 === marker3){
+                return true;
+            }
+        }
+        return false;
+    }
+    return {checkWin};
+   
+}
+
 const GameFlow = (() => {
     let fields = document.querySelectorAll('.field');
-    const playerX = Player("Name", "X");
-    const playerO = Player("Name1", "O");
+    let winner = document.querySelector('#winnerName');
+    let winnerName ='';
+    const playerX = Player("Player X", "X");
+    const playerO = Player("Player O", "O");
     let round = 1;
     let isOver = false;
+    
     const updateGameBoard = () => {
         for(let i = 0; i < fields.length; i++){
             fields[i].textContent = Gameboard.getField(i);
@@ -60,9 +91,42 @@ const GameFlow = (() => {
             if(event.target.textContent != ''){
                 return;
             }
-            if(isOver){
-                console.log('Game is over');
+            if(!isOver){
+                winner.textContent = 'has won';
+                document.querySelector('.gameover').style.display = 'none';
+
             }
+            if(round >= 5){
+                console.log('round is 5 or bigger')
+                if(GameOver(Gameboard.getBoard()).checkWin()){
+                    isOver = true;
+                    if(isOver){
+                        console.log('Game is over');
+                        if(playerX.marker === getCurrentPlayerMarker()){
+                            winnerName = playerO.getName();
+                        }else{
+                            winnerName = playerX.getName();
+                        }
+                        
+                        winner.textContent = winnerName + ' ' + winner.textContent ;
+                        document.querySelector('.gameover').style.display = 'block';
+                        Gameboard.reset();
+                        round = 1;
+                        isOver = false;
+                    }
+                    console.log(`isOver: ${isOver}`);
+                    return;
+                }else if(round >= 9){
+                    winner.textContent = 'Draw!' ;
+                    document.querySelector('.gameover').style.display = 'block';
+                    Gameboard.reset();
+                    round = 1;
+                    isOver = false;
+                    return;
+                }
+
+            }
+            
             console.log(`field id: ${field.id}, round:${round}, event target id: ${parseInt(event.target.id)}`)
             playRound(parseInt(event.target.id), getCurrentPlayerMarker());
             round++;    
